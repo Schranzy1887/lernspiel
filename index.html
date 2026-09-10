@@ -1,0 +1,528 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Learn German with Andree</title>
+    <style>
+        /* --- DESIGN UND LAYOUT --- */
+        body {
+            margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #222; background-size: contain; background-position: center;
+            background-repeat: no-repeat; transition: background-image 2s ease-in-out;
+            height: 100vh; display: flex; justify-content: center; align-items: center; overflow: hidden;
+        }
+
+        .overlay {
+            position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(255, 255, 255, 0.2); /* Viel durchsichtiger für kräftige Fotos */
+            z-index: 1;
+        }
+
+        .container {
+            position: relative; z-index: 2; 
+            background: rgba(255, 255, 255, 0.85); 
+            backdrop-filter: blur(6px); /* Milchglas-Effekt */
+            -webkit-backdrop-filter: blur(6px);
+            padding: 30px; border-radius: 20px; box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+            text-align: center; max-width: 700px; width: 90%; max-height: 90vh; 
+            overflow-y: auto; border: 3px solid #ffb6c1;
+        }
+
+        h1 { font-size: 2.2em; color: #333; margin-bottom: 5px; }
+        .version { font-size: 1.1em; color: #e74c3c; margin-bottom: 15px; font-weight: bold; }
+        .credits { font-size: 1.1em; color: #e83e8c; font-weight: bold; font-style: italic; margin-bottom: 20px; }
+
+        .changelog {
+            background: rgba(249, 249, 249, 0.9); border: 1px solid #ddd; border-radius: 10px;
+            padding: 15px; text-align: left; font-size: 14px; color: #555; margin-bottom: 20px;
+        }
+        .changelog h3 { margin-top: 0; color: #333; }
+        .changelog ul { margin-bottom: 10px; padding-left: 20px; }
+        details { background: #eee; padding: 10px; border-radius: 8px; cursor: pointer; }
+        summary { font-weight: bold; color: #333; outline: none; }
+
+        button {
+            background-color: #4CAF50; border: none; color: white;
+            padding: 12px 25px; text-align: center; text-decoration: none;
+            display: inline-block; font-size: 18px; margin: 8px; cursor: pointer;
+            border-radius: 10px; transition: background-color 0.3s, transform 0.1s;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1); font-weight: bold;
+        }
+        button:hover { background-color: #45a049; }
+        button:active { transform: scale(0.95); }
+        
+        .btn-music { background-color: #008CBA; }
+        .btn-menu { background-color: #34495e; }
+        .btn-quit { background-color: #e74c3c; font-size: 16px; padding: 10px 15px; }
+        .btn-option { background-color: #f39c12; width: 100%; margin: 6px 0; font-size: 20px; padding: 12px 20px; }
+        
+        input[type="text"] {
+            width: 80%; padding: 15px; font-size: 24px; margin: 20px 0;
+            border: 2px solid #ccc; border-radius: 10px; text-align: center;
+        }
+
+        .question-text { font-size: 26px; font-weight: bold; color: #222; margin-bottom: 10px; }
+        .translation-text { font-size: 20px; color: #555; margin-bottom: 20px; font-style: italic; }
+        
+        .feedback { font-size: 22px; font-weight: bold; margin-top: 15px; min-height: 30px; padding: 10px; border-radius: 10px; }
+        .correct { color: #155724; background-color: #d4edda; border: 1px solid #c3e6cb; }
+        .wrong { color: #721c24; background-color: #f8d7da; border: 1px solid #f5c6cb; }
+
+        .top-bar {
+            display: flex; justify-content: space-between; align-items: center;
+            font-size: 18px; font-weight: bold; color: #444; margin-bottom: 15px;
+            border-bottom: 2px solid #eee; padding-bottom: 10px;
+        }
+
+        .stat-box { background: rgba(238, 238, 238, 0.9); padding: 15px; margin: 10px; border-radius: 10px; font-size: 20px; }
+        .stat-grid { display: flex; flex-wrap: wrap; justify-content: center; }
+        
+        .achiev-list { text-align: left; max-height: 300px; overflow-y: auto; padding-right: 10px; }
+        .achiev-item { 
+            padding: 10px; margin: 5px 0; border-radius: 8px; background: rgba(250, 250, 250, 0.9); 
+            border-left: 5px solid #ccc; font-size: 18px; display: flex; justify-content: space-between;
+        }
+        .achiev-unlocked { border-left-color: #f1c40f; background: rgba(255, 253, 245, 0.9); font-weight: bold; color: #d35400; }
+
+        #achievement-popup {
+            position: fixed; top: 20px; left: 50%; transform: translateX(-50%);
+            background: linear-gradient(135deg, #f1c40f, #f39c12); color: white;
+            padding: 20px 40px; border-radius: 50px; font-size: 22px; font-weight: bold;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3); z-index: 999; display: none;
+            animation: popDown 0.5s ease-out; border: 3px solid #fff; text-align: center;
+        }
+
+        @keyframes popDown { from { top: -100px; opacity: 0; } to { top: 20px; opacity: 1; } }
+        .hidden { display: none !important; }
+    </style>
+</head>
+<body>
+
+    <div class="overlay"></div>
+    <div id="achievement-popup">🏆 Achievement Unlocked!</div>
+    
+    <audio id="bgMusic"></audio>
+
+    <!-- MAIN MENU -->
+    <div class="container" id="menu-screen">
+        <h1>Learn German with Love</h1>
+        <div class="version">Version 1.05: The Family Update ❤️</div>
+        <div class="credits">programmed by Andree Sonnenberg for intensive learning</div>
+        
+        <div class="changelog">
+            <h3>🌟 What's New in V1.05:</h3>
+            <ul>
+                <li>Massive vocabulary expansion (Hundreds of new words & verbs)</li>
+                <li>Personal story sentences added (Rachelle, Andree, Charlie, Jonje)</li>
+                <li>12 new beautiful background images (Now much more visible!)</li>
+                <li>Dynamic music playlist (Loops seamlessly through multiple songs)</li>
+            </ul>
+            <details>
+                <summary>📜 Older Versions (Click to expand)</summary>
+                <p><strong>V1.02:</strong> Added beautiful Results Screen at the end of rounds. Safe quit option.</p>
+                <p><strong>V1.01:</strong> 50 questions per session. Detailed Statistics & Achievements overview.</p>
+                <p><strong>V1.00:</strong> Initial Release with basic vocabulary and dynamic multiple choice.</p>
+            </details>
+        </div>
+
+        <button onclick="startGame()">▶️ Start Learning</button>
+        <button class="btn-menu" onclick="showStats()">📊 My Stats</button>
+        <button class="btn-menu" onclick="showAchievements()">🏆 Achievements</button><br>
+        <button class="btn-music" id="musicToggleBtn" onclick="toggleMusic()">🎵 Music: OFF</button>
+    </div>
+
+    <!-- STATS SCREEN -->
+    <div class="container hidden" id="stats-screen">
+        <h2>Your Progress</h2>
+        <div class="stat-grid">
+            <div class="stat-box">✅ Correct:<br><span id="stat-correct" style="color: green; font-size: 28px;">0</span></div>
+            <div class="stat-box">❌ Wrong:<br><span id="stat-wrong" style="color: red; font-size: 28px;">0</span></div>
+            <div class="stat-box">🎓 Finished Sessions:<br><span id="stat-completed" style="color: blue; font-size: 28px;">0</span></div>
+            <div class="stat-box">🏃 Aborted Sessions:<br><span id="stat-aborted" style="color: orange; font-size: 28px;">0</span></div>
+        </div>
+        <button onclick="goHome()">🔙 Back to Menu</button>
+    </div>
+
+    <!-- ACHIEVEMENTS SCREEN -->
+    <div class="container hidden" id="achievements-screen">
+        <h2>Your Achievements</h2>
+        <p style="color: #666;">Unlock achievements by getting more answers right!</p>
+        <div class="achiev-list" id="achiev-container"></div>
+        <br><button onclick="goHome()">🔙 Back to Menu</button>
+    </div>
+
+    <!-- ROUND RESULTS SCREEN -->
+    <div class="container hidden" id="results-screen">
+        <h2>Session Complete! 🎉</h2>
+        <p style="font-size: 20px; color: #555;">Great job! Here are your results for this round:</p>
+        <div class="stat-grid">
+            <div class="stat-box">✅ Correct:<br><span id="round-correct" style="color: green; font-size: 32px;">0</span></div>
+            <div class="stat-box">❌ Wrong:<br><span id="round-wrong" style="color: red; font-size: 32px;">0</span></div>
+        </div>
+        <button onclick="goHome()" style="margin-top: 20px; background-color: #8e44ad;">🔙 Continue to Menu</button>
+    </div>
+
+    <!-- GAME SCREEN -->
+    <div class="container hidden" id="game-screen">
+        <div class="top-bar">
+            <div>Score: <span id="roundScore">0</span></div>
+            <div>Question: <span id="qCountDisplay">1</span> / 50</div>
+            <button class="btn-quit" onclick="abortSession()">Quit 🚪</button>
+        </div>
+
+        <div id="questionArea">
+            <div class="question-text" id="qText">Loading...</div>
+            <div class="translation-text" id="tText">Loading...</div>
+            
+            <div id="typeArea" class="hidden">
+                <input type="text" id="answerInput" placeholder="Type German here..." autocomplete="off">
+                <br>
+                <button onclick="checkAnswer()">Submit</button>
+            </div>
+
+            <div id="choiceArea" class="hidden">
+                <button class="btn-option" id="btnOpt1" onclick="checkChoice(1)"></button>
+                <button class="btn-option" id="btnOpt2" onclick="checkChoice(2)"></button>
+                <button class="btn-option" id="btnOpt3" onclick="checkChoice(3)"></button>
+                <button class="btn-option" id="btnOpt4" onclick="checkChoice(4)"></button>
+                <button class="btn-option" id="btnOpt5" onclick="checkChoice(5)"></button>
+            </div>
+        </div>
+
+        <div class="feedback hidden" id="feedbackArea"></div>
+        <button id="nextBtn" class="hidden" onclick="nextQuestion()" style="background-color: #8e44ad; width: 100%; margin-top: 15px;">Next Question ➔</button>
+        <button id="finishBtn" class="hidden" onclick="finishSession()" style="background-color: #27ae60; width: 100%; margin-top: 15px;">Finish Session! 🎉</button>
+    </div>
+
+    <script>
+        // --- BILDER ARRAY (12 Bilder) ---
+        const images = [
+            "andree.jpg", "PaquibotRA30081990.png", "andree2.jpg", "andree3.jpg", 
+            "andree4.jpg", "andree5.jpg", "jonje-charlie1.jpg", "jonje-charlie2.jpg", 
+            "jonje-charlie3.jpg", "phillipinen.jpg", "rachelle2.jpg", "rachelle3.jpg"
+        ];
+        let imgIndex = 0;
+        function changeBackground() {
+            document.body.style.backgroundImage = `url('${images[imgIndex]}')`;
+            imgIndex = (imgIndex + 1) % images.length;
+        }
+        changeBackground(); 
+        setInterval(changeBackground, 10000); 
+
+        // --- LOKALE DATENBANK FÜR STATS ---
+        let playerStats = JSON.parse(localStorage.getItem('andreeGameStats')) || {
+            totalCorrect: 0, totalWrong: 0, completedSessions: 0, abortedSessions: 0, achieved: []
+        };
+        function saveStats() { localStorage.setItem('andreeGameStats', JSON.stringify(playerStats)); }
+
+        // --- AUDIO & PLAYLIST ---
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        const playlist = ["music.mp3", "Music2.mp3"];
+        let currentTrack = 0;
+        let musicPlaying = false;
+        const bgm = document.getElementById("bgMusic");
+
+        bgm.addEventListener('ended', function() {
+            currentTrack = (currentTrack + 1) % playlist.length;
+            bgm.src = playlist[currentTrack];
+            bgm.play();
+        });
+
+        function toggleMusic() {
+            const btn = document.getElementById("musicToggleBtn");
+            if (musicPlaying) {
+                bgm.pause(); btn.innerText = "🎵 Music: OFF"; btn.style.backgroundColor = "#008CBA";
+                musicPlaying = false;
+            } else {
+                if (!bgm.src || bgm.src.endsWith(window.location.pathname)) {
+                    bgm.src = playlist[currentTrack]; 
+                }
+                bgm.volume = 0.4;
+                bgm.play().then(() => {
+                    btn.innerText = "🎵 Music: ON"; btn.style.backgroundColor = "#27ae60"; musicPlaying = true;
+                }).catch(e => { console.log("Audio autoplay prevented."); });
+            }
+        }
+
+        function playSound(type) {
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+            const osc = audioCtx.createOscillator(); const gain = audioCtx.createGain();
+            osc.connect(gain); gain.connect(audioCtx.destination);
+
+            if (type === 'correct') {
+                osc.type = 'sine'; osc.frequency.setValueAtTime(600, audioCtx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(1200, audioCtx.currentTime + 0.1);
+                gain.gain.setValueAtTime(0.3, audioCtx.currentTime); gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
+                osc.start(); osc.stop(audioCtx.currentTime + 0.3);
+            } else if (type === 'wrong') {
+                osc.type = 'sawtooth'; osc.frequency.setValueAtTime(300, audioCtx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(100, audioCtx.currentTime + 0.2);
+                gain.gain.setValueAtTime(0.3, audioCtx.currentTime); gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
+                osc.start(); osc.stop(audioCtx.currentTime + 0.3);
+            } else if (type === 'achievement') {
+                osc.type = 'square'; const now = audioCtx.currentTime;
+                osc.frequency.setValueAtTime(400, now); osc.frequency.setValueAtTime(500, now + 0.1);
+                osc.frequency.setValueAtTime(600, now + 0.2); osc.frequency.setValueAtTime(800, now + 0.3);
+                gain.gain.setValueAtTime(0.2, now); gain.gain.linearRampToValueAtTime(0, now + 0.6);
+                osc.start(); osc.stop(now + 0.6);
+            }
+        }
+
+        // --- DIE MASSIV ERWEITERTE DATENBANK ---
+        const vocabDB = [
+            { de: "Hallo", en: "Hello", ceb: "Kumusta" }, { de: "Tschüss", en: "Goodbye", ceb: "Babay" },
+            { de: "Bitte", en: "Please", ceb: "Palihug" }, { de: "Danke", en: "Thank you", ceb: "Salamat" },
+            { de: "Ja", en: "Yes", ceb: "Oo" }, { de: "Nein", en: "No", ceb: "Dili" },
+            { de: "Wasser", en: "Water", ceb: "Tubig" }, { de: "Essen", en: "Food", ceb: "Pagkaon" },
+            { de: "Liebe", en: "Love", ceb: "Gugma" }, { de: "Freundin", en: "Girlfriend", ceb: "Uyab (babaye)" },
+            { de: "Freund", en: "Boyfriend", ceb: "Uyab (lalaki)" }, { de: "Familie", en: "Family", ceb: "Pamilya" },
+            { de: "Mutter", en: "Mother", ceb: "Inahan" }, { de: "Vater", en: "Father", ceb: "Amahan" },
+            { de: "Schön", en: "Beautiful", ceb: "Gwapa" }, { de: "Gut", en: "Good", ceb: "Maayo" },
+            { de: "Groß", en: "Big", ceb: "Dako" }, { de: "Klein", en: "Small", ceb: "Gamay" },
+            { de: "Haus", en: "House", ceb: "Balay" }, { de: "Schule", en: "School", ceb: "Eskwelahan" },
+            { de: "Auto", en: "Car", ceb: "Sakyanan" }, { de: "Fahrrad", en: "Bicycle", ceb: "Bisikleta" },
+            { de: "Sport", en: "Sports", ceb: "Dula/Sports" }, { de: "Buch", en: "Book", ceb: "Libro" },
+            { de: "Tag", en: "Day", ceb: "Adlaw" }, { de: "Nacht", en: "Night", ceb: "Gabii" },
+            { de: "Morgen", en: "Morning", ceb: "Buntag" }, { de: "Abend", en: "Evening", ceb: "Hapon" },
+            { de: "Rot", en: "Red", ceb: "Pula" }, { de: "Blau", en: "Blue", ceb: "Asul" },
+            { de: "Grün", en: "Green", ceb: "Berde" }, { de: "Gelb", en: "Yellow", ceb: "Dalag" },
+            { de: "Eins", en: "One", ceb: "Usa" }, { de: "Zwei", en: "Two", ceb: "Duha" },
+            { de: "Lachen", en: "Laugh", ceb: "Katawa" }, { de: "Weinen", en: "Cry", ceb: "Hilak" },
+            { de: "Kuss", en: "Kiss", ceb: "Halok" }, { de: "Spielen", en: "Play", ceb: "Dula" },
+            { de: "Laufen", en: "Run", ceb: "Dagan" }, { de: "Schwimmen", en: "Swim", ceb: "Langoy" },
+            { de: "Essen", en: "Eat", ceb: "Kaon" }, { de: "Trinken", en: "Drink", ceb: "Inom" },
+            { de: "Schlafen", en: "Sleep", ceb: "Tug" }, { de: "Arbeiten", en: "Work", ceb: "Trabaho" },
+            { de: "Kochen", en: "Cook", ceb: "Luto" }, { de: "Geld", en: "Money", ceb: "Kwarta" },
+            { de: "Müde", en: "Tired", ceb: "Gikapoy" }, { de: "Glücklich", en: "Happy", ceb: "Malipayon" }
+        ];
+
+        const units = ["", "eins", "zwei", "drei", "vier", "fünf", "sechs", "sieben", "acht", "neun"];
+        const teens = ["zehn", "elf", "zwölf", "dreizehn", "vierzehn", "fünfzehn", "sechzehn", "siebzehn", "achtzehn", "neunzehn"];
+        const tens = ["", "zehn", "zwanzig", "dreißig", "vierzig", "fünfzig", "sechzig", "siebzig", "achtzig", "neunzig"];
+        for (let i = 1; i <= 200; i++) {
+            let deWord = "";
+            if (i < 10) deWord = units[i];
+            else if (i >= 10 && i < 20) deWord = teens[i - 10];
+            else if (i < 100) {
+                let u = i % 10; let t = Math.floor(i / 10);
+                if (u === 0) deWord = tens[t]; else if (u === 1) deWord = "einund" + tens[t]; else deWord = units[u] + "und" + tens[t];
+            } else if (i === 100) deWord = "hundert";
+            else if (i === 200) deWord = "zweihundert";
+            else {
+                let rest = i % 100;
+                let hWord = i >= 200 ? "zweihundert" : "einhundert";
+                if (rest < 10) deWord = hWord + units[rest];
+                else if (rest >= 10 && rest < 20) deWord = hWord + teens[rest - 10];
+                else {
+                    let u = rest % 10; let t = Math.floor(rest / 10);
+                    if (u === 0) deWord = hWord + tens[t]; else if (u === 1) deWord = hWord + "einund" + tens[t]; else deWord = hWord + units[u] + "und" + tens[t];
+                }
+            }
+            vocabDB.push({ de: deWord, en: `Number ${i}`, ceb: `Numero ${i}` });
+        }
+
+        const sentenceDB = [
+            { de: "___ küsst Andree.", answer: "rachelle", en: "Rachelle kisses Andree.", ceb: "Gihagkan ni Rachelle si Andree." },
+            { de: "Rachelle ___ Andree sehr.", answer: "liebt", en: "Rachelle loves Andree very much.", ceb: "Gihigugma pag-ayo ni Rachelle si Andree." },
+            { de: "Charlie macht gerne ___.", answer: "sport", en: "Charlie likes to do sports.", ceb: "Ganahan si Charlie mag-sports." },
+            { de: "Charlie ___ schnell.", answer: "rennt", en: "Charlie runs fast.", ceb: "Kusog modagan si Charlie." },
+            { de: "Charlie fährt gerne ___.", answer: "fahrrad", en: "Charlie likes riding a bicycle.", ceb: "Ganahan si Charlie mag-bike." },
+            { de: "Charlie spielt ___.", answer: "basketball", en: "Charlie plays basketball.", ceb: "Nagdula si Charlie og basketball." },
+            { de: "Charlie hat mal ___.", answer: "geboxt", en: "Charlie boxed before.", ceb: "Nag-boxing si Charlie kaniadto." },
+            { de: "Rachelle findet Boxen nicht ___.", answer: "toll", en: "Rachelle does not think boxing is great.", ceb: "Wala ganahi si Rachelle sa boxing." },
+            { de: "Jonje ___ gerne Roblox.", answer: "spielt", en: "Jonje likes to play Roblox.", ceb: "Ganahan modula si Jonje og Roblox." },
+            { de: "Jonje liebt ___ Games.", answer: "online", en: "Jonje loves online games.", ceb: "Ganahan kaayo si Jonje og online games." },
+            { de: "Wir sind eine glückliche ___.", answer: "familie", en: "We are a happy family.", ceb: "Usa kita ka malipayong pamilya." },
+            { de: "Andree denkt immer an ___.", answer: "rachelle", en: "Andree always thinks about Rachelle.", ceb: "Kanunay maghunahuna si Andree kang Rachelle." },
+            { de: "Charlie und Jonje sind tolle ___.", answer: "jungs", en: "Charlie and Jonje are great boys.", ceb: "Maayong mga bata sila Charlie ug Jonje." },
+            { de: "Mein Lieblingsverein ist der ___.", answer: "hsv", en: "My favorite club is HSV.", ceb: "Ang akong paboritong club kay HSV." },
+            { de: "Stefan Schnoor ist mein ___.", answer: "lieblingsspieler", en: "Stefan Schnoor is my favorite player.", ceb: "Si Stefan Schnoor ang akong paboritong magdudula." },
+            { de: "Ich ___ dich.", answer: "liebe", en: "I love you.", ceb: "Gihigugma tika." },
+            { de: "Du ___ sehr schön.", answer: "bist", en: "You are very beautiful.", ceb: "Gwapa kaayo ka." },
+            { de: "Wir ___ nach Hause.", answer: "gehen", en: "We are going home.", ceb: "Mouli na ta." },
+            { de: "Ich ___ Hunger.", answer: "habe", en: "I am hungry.", ceb: "Gigutom ko." },
+            { de: "Ich ___ Wasser.", answer: "trinke", en: "I drink water.", ceb: "Niinom ko og tubig." },
+            { de: "Wo ___ die Toilette?", answer: "ist", en: "Where is the toilet?", ceb: "Asa ang kasilyas?" },
+            { de: "Ich ___ Deutsch.", answer: "lerne", en: "I learn German.", ceb: "Nagkat-on ko og German." }
+        ];
+
+        // --- SPIEL LOGIK ---
+        let roundScore = 0; let questionCount = 0; const MAX_QUESTIONS = 50;
+        let currentQuestion = null; let questionType = 0; let correctChoice = 0;
+        const achievementsList = [1, 5, 10, 25, 50, 100, 150, 200, 300, 400, 500, 750, 1000, 1500, 2000, 5000];
+
+        function hideAll() {
+            document.getElementById("menu-screen").classList.add("hidden");
+            document.getElementById("stats-screen").classList.add("hidden");
+            document.getElementById("achievements-screen").classList.add("hidden");
+            document.getElementById("game-screen").classList.add("hidden");
+            document.getElementById("results-screen").classList.add("hidden");
+        }
+
+        function goHome() { hideAll(); document.getElementById("menu-screen").classList.remove("hidden"); }
+
+        function showStats() {
+            hideAll();
+            document.getElementById("stat-correct").innerText = playerStats.totalCorrect;
+            document.getElementById("stat-wrong").innerText = playerStats.totalWrong;
+            document.getElementById("stat-completed").innerText = playerStats.completedSessions;
+            document.getElementById("stat-aborted").innerText = playerStats.abortedSessions;
+            document.getElementById("stats-screen").classList.remove("hidden");
+        }
+
+        function showAchievements() {
+            hideAll();
+            let container = document.getElementById("achiev-container");
+            container.innerHTML = ""; 
+            achievementsList.forEach(target => {
+                let div = document.createElement("div");
+                let isUnlocked = playerStats.achieved.includes(target);
+                div.className = isUnlocked ? "achiev-item achiev-unlocked" : "achiev-item";
+                div.innerHTML = `<span>${isUnlocked ? '🔓' : '🔒'} ${target} Correct Answers</span><span>${isUnlocked ? '🏆' : ''}</span>`;
+                container.appendChild(div);
+            });
+            document.getElementById("achievements-screen").classList.remove("hidden");
+        }
+
+        function startGame() {
+            hideAll(); roundScore = 0; questionCount = 1;
+            document.getElementById("roundScore").innerText = roundScore;
+            document.getElementById("qCountDisplay").innerText = questionCount;
+            document.getElementById("game-screen").classList.remove("hidden");
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+            nextQuestion();
+        }
+
+        function nextQuestion() {
+            let feedback = document.getElementById("feedbackArea");
+            feedback.innerText = ""; feedback.classList.add("hidden");
+            document.getElementById("answerInput").value = "";
+            document.getElementById("answerInput").classList.remove("hidden");
+            document.getElementById("nextBtn").classList.add("hidden");
+            document.getElementById("finishBtn").classList.add("hidden");
+            document.getElementById("typeArea").classList.add("hidden");
+            document.getElementById("choiceArea").classList.add("hidden");
+            document.getElementById("qCountDisplay").innerText = questionCount;
+
+            let rand = Math.random();
+            if (rand < 0.2) questionType = 0; else if (rand < 0.6) questionType = 1; else questionType = 2;
+
+            if (questionType === 0) {
+                currentQuestion = vocabDB[Math.floor(Math.random() * vocabDB.length)];
+                document.getElementById("qText").innerText = `Write in German:`;
+                document.getElementById("tText").innerText = `🇬🇧 ${currentQuestion.en} \n🇵🇭 ${currentQuestion.ceb}`;
+                document.getElementById("typeArea").classList.remove("hidden");
+                document.getElementById("answerInput").focus();
+            } else if (questionType === 1) {
+                currentQuestion = vocabDB[Math.floor(Math.random() * vocabDB.length)];
+                document.getElementById("qText").innerText = `What does this mean?`;
+                document.getElementById("tText").innerText = `🇩🇪 "${currentQuestion.de}"`;
+                document.getElementById("choiceArea").classList.remove("hidden");
+
+                let numOptions = (Math.random() < 0.5) ? 4 : 5;
+                correctChoice = Math.floor(Math.random() * numOptions) + 1;
+                let wrongAnswers = [];
+                while (wrongAnswers.length < (numOptions - 1)) {
+                    let randomVocab = vocabDB[Math.floor(Math.random() * vocabDB.length)];
+                    if (randomVocab.de !== currentQuestion.de && !wrongAnswers.some(v => v.de === randomVocab.de)) {
+                        wrongAnswers.push(randomVocab);
+                    }
+                }
+                for(let i = 1; i <= 5; i++) document.getElementById("btnOpt" + i).style.display = "none";
+                let wrongIndex = 0;
+                for(let i = 1; i <= numOptions; i++) {
+                    let btn = document.getElementById("btnOpt" + i);
+                    btn.style.display = "block"; 
+                    if (i === correctChoice) { btn.innerText = `🇬🇧 ${currentQuestion.en} / 🇵🇭 ${currentQuestion.ceb}`; } 
+                    else { btn.innerText = `🇬🇧 ${wrongAnswers[wrongIndex].en} / 🇵🇭 ${wrongAnswers[wrongIndex].ceb}`; wrongIndex++; }
+                }
+            } else if (questionType === 2) {
+                currentQuestion = sentenceDB[Math.floor(Math.random() * sentenceDB.length)];
+                document.getElementById("qText").innerText = `Fill in the blank!`;
+                let displaySentence = currentQuestion.de.replace(currentQuestion.answer, "___");
+                document.getElementById("tText").innerText = `🇩🇪 ${displaySentence}\n🇬🇧 ${currentQuestion.en} \n🇵🇭 ${currentQuestion.ceb}`;
+                document.getElementById("typeArea").classList.remove("hidden");
+                document.getElementById("answerInput").focus();
+            }
+        }
+
+        document.getElementById("answerInput").addEventListener("keypress", function(event) {
+            if (event.key === "Enter") {
+                event.preventDefault();
+                if(document.getElementById("nextBtn").classList.contains("hidden") && document.getElementById("finishBtn").classList.contains("hidden")) {
+                    checkAnswer();
+                } else if (!document.getElementById("nextBtn").classList.contains("hidden")) {
+                    nextQuestion();
+                } else { finishSession(); }
+            }
+        });
+
+        function checkAnswer() {
+            let userInput = document.getElementById("answerInput").value.trim().toLowerCase();
+            let correctAnswer = (questionType === 2) ? currentQuestion.answer.toLowerCase() : currentQuestion.de.toLowerCase();
+            if (userInput === correctAnswer) handleCorrect(); else handleWrong(correctAnswer);
+        }
+
+        function checkChoice(btnNum) {
+            if (btnNum === correctChoice) handleCorrect();
+            else { let correctString = `🇬🇧 ${currentQuestion.en} / 🇵🇭 ${currentQuestion.ceb}`; handleWrong(correctString); }
+        }
+
+        function handleCorrect() {
+            playSound('correct'); playerStats.totalCorrect++; roundScore++;
+            document.getElementById("roundScore").innerText = roundScore;
+            let feedback = document.getElementById("feedbackArea");
+            feedback.innerText = "Correct! 🎉"; feedback.className = "feedback correct"; feedback.classList.remove("hidden");
+            checkAchievements(); saveStats(); handleRoundProgress();
+        }
+
+        function handleWrong(correctString) {
+            playSound('wrong'); playerStats.totalWrong++;
+            let feedback = document.getElementById("feedbackArea");
+            feedback.innerText = `Wrong! ❌\nCorrect answer is: ${correctString}`;
+            feedback.className = "feedback wrong"; feedback.classList.remove("hidden");
+            saveStats(); handleRoundProgress();
+        }
+
+        function handleRoundProgress() {
+            if(questionType === 0 || questionType === 2) document.getElementById("typeArea").classList.add("hidden");
+            else document.getElementById("choiceArea").classList.add("hidden");
+
+            if (questionCount >= MAX_QUESTIONS) {
+                document.getElementById("finishBtn").classList.remove("hidden"); document.getElementById("finishBtn").focus();
+            } else {
+                questionCount++;
+                document.getElementById("nextBtn").classList.remove("hidden"); document.getElementById("nextBtn").focus();
+            }
+        }
+
+        function checkAchievements() {
+            let total = playerStats.totalCorrect;
+            achievementsList.forEach(target => {
+                if (total >= target && !playerStats.achieved.includes(target)) {
+                    playerStats.achieved.push(target); playSound('achievement');
+                    let popup = document.getElementById("achievement-popup");
+                    popup.innerText = `🏆 Milestone: ${target} Correct Answers!`;
+                    popup.style.display = "block";
+                    setTimeout(() => { popup.style.display = "none"; }, 4000);
+                }
+            });
+        }
+
+        function finishSession() {
+            playerStats.completedSessions++; saveStats();
+            hideAll();
+            document.getElementById("round-correct").innerText = roundScore;
+            document.getElementById("round-wrong").innerText = MAX_QUESTIONS - roundScore; 
+            document.getElementById("results-screen").classList.remove("hidden");
+        }
+
+        function abortSession() {
+            if(confirm("Are you sure you want to quit this session? Progress is saved, but the session counts as aborted.")) {
+                playerStats.abortedSessions++; saveStats(); goHome();
+            }
+        }
+    </script>
+</body>
+</html>
